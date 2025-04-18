@@ -7,7 +7,7 @@ import pymongo
 import mysql.connector
 
 # Load API key securely
-openai.api_key = os.getenv("OPENAI_API_KEY")
+openai.api_key = st.secrets["OPENAI_API_KEY"]
 
 st.title("Natural Language → Database Query Interface")
 
