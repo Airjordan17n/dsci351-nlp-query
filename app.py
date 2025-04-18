@@ -8,8 +8,8 @@ from sshtunnel import SSHTunnelForwarder
 openai.api_key = st.secrets["OPENAI_API_KEY"]
 
 # ---- Load Datasets from /data folder ----
-cards_df = pd.read_csv("data/cards.csv", nrows=1000)
-users_df = pd.read_csv("data/users.csv", nrows=1000)
+cards_df = pd.read_csv("data/cards_data.csv", nrows=1000)
+users_df = pd.read_csv("data/users_data.csv", nrows=1000)
 
 cards_df_columns = list(cards_df.columns)
 users_df_columns = list(users_df.columns)
