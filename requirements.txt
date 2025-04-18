@@ -2,3 +2,4 @@ streamlit
 openai
 mysql-connector-python
 pymongo
+pymysql
