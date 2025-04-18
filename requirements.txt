@@ -1,6 +1,7 @@
 streamlit
-openai
+openai>=1.0.0
 mysql-connector-python
 pymongo
 pymysql
 sshtunnel
+pandas
