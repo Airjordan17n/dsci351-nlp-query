@@ -3,24 +3,34 @@ import pandas as pd
 import openai
 import pymysql
 from sshtunnel import SSHTunnelForwarder
+import os
 
-# --- Set API Key ---
+# --- Set API Key from secrets ---
 openai.api_key = st.secrets["OPENAI_API_KEY"]
 
-# ---- Load Datasets from /data folder ----
-cards_df = pd.read_csv("data/cards_data.csv", nrows=1000)
-users_df = pd.read_csv("data/users_data.csv", nrows=1000)
+# --- OPTIONAL: Reconstruct PEM file from secrets (if using Streamlit secrets instead of uploaded file) ---
+# with open("dsci351.pem", "w") as f:
+#     f.write(st.secrets["EC2_PEM"])
+# os.chmod("dsci351.pem", 0o600)
+
+# --- Load Datasets from /data ---
+try:
+    cards_df = pd.read_csv("data/cards_data.csv", nrows=1000)
+    users_df = pd.read_csv("data/users_data.csv", nrows=1000)
+except FileNotFoundError as e:
+    st.error(f"Could not load dataset: {e}")
+    st.stop()
 
 cards_df_columns = list(cards_df.columns)
 users_df_columns = list(users_df.columns)
 
-# ---- Map datasets to their fields ----
+# --- Dataset Schema Map ---
 dataset_fields_map = {
     "users_df": users_df_columns,
     "cards_df": cards_df_columns
 }
 
-# ---- Determine which datasets are needed based on user input ----
+# --- Determine relevant datasets for the user's question ---
 def which_dataset(user_input, dataset_fields):
     schema_description = "\n".join([
         f"{name}: {', '.join(fields)}" for name, fields in dataset_fields.items()
@@ -45,7 +55,7 @@ Return ONLY the dataset names (like "cards_df", "users_df") as a comma-separated
 
     return response.choices[0].message.content.strip()
 
-# ---- Generate SQL query using OpenAI ----
+# --- Generate SQL query ---
 def create_query(user_input):
     datasets = which_dataset(user_input, dataset_fields_map)
     datasets_list = [d.strip() for d in datasets.split(",")]
@@ -73,11 +83,11 @@ Return ONLY a valid MySQL query using SQL syntax — no explanation.
     raw_response = response.choices[0].message.content.strip()
     return raw_response, datasets_list
 
-# ---- Execute MySQL query via SSH tunnel ----
+# --- Execute SQL query via SSH tunnel to EC2 ---
 def execute_mysql_query(query):
     ssh_host = 'ec2-3-144-6-200.us-east-2.compute.amazonaws.com'
     ssh_user = 'ubuntu'
-    ssh_key = 'dsci351.pem'  # This key must be uploaded to Streamlit Files tab
+    ssh_key = 'dsci351.pem'  # This key must exist in root directory or be built from secrets
 
     mysql_host = 'localhost'
     mysql_user = 'root'
@@ -101,23 +111,24 @@ def execute_mysql_query(query):
             with connection.cursor() as cursor:
                 cursor.execute(query)
 
-                # Handle SELECT
                 if query.strip().lower().startswith("select"):
                     result = cursor.fetchall()
                     column_names = [desc[0] for desc in cursor.description]
                     return pd.DataFrame(result, columns=column_names)
                 else:
-                    # Handle INSERT/UPDATE/DELETE
                     connection.commit()
                     return f"Query executed successfully: `{query.split()[0].upper()}`"
     except Exception as e:
         return f"MySQL Execution Error: {e}"
 
-# ---- Streamlit UI ----
+# --- Streamlit App Layout ---
 st.set_page_config(page_title="Natural Language DB Query", layout="wide")
 st.title("Natural Language → SQL Query Interface")
 
-st.markdown("Enter a natural language query (e.g., *'Get users born in 1999'*, *'Insert new user into users_df'*)")
+st.markdown("Try queries like:")
+st.markdown("- *Get users born in 1999*")
+st.markdown("- *Insert a new user with ID 9000 and name John Doe*")
+st.markdown("- *List all cards with limit over 5000*")
 
 user_input = st.text_area("Enter your natural language query:")
 
