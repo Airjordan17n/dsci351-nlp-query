@@ -3,3 +3,4 @@ openai
 mysql-connector-python
 pymongo
 pymysql
+sshtunnel
