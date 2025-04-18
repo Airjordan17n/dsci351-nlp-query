@@ -2,27 +2,25 @@ import streamlit as st
 import pandas as pd
 import openai
 import pymysql
-import mysql.connector
 from sshtunnel import SSHTunnelForwarder
-import os
 
-# Load API key securely from Streamlit Secrets
+# --- Set API Key ---
 openai.api_key = st.secrets["OPENAI_API_KEY"]
 
-# ---- Load sample datasets from GitHub repo ----
+# ---- Load Datasets from /data folder ----
 cards_df = pd.read_csv("data/cards.csv", nrows=1000)
 users_df = pd.read_csv("data/users.csv", nrows=1000)
 
 cards_df_columns = list(cards_df.columns)
 users_df_columns = list(users_df.columns)
 
-# ---- Dataset schema mapping ----
+# ---- Map datasets to their fields ----
 dataset_fields_map = {
     "users_df": users_df_columns,
     "cards_df": cards_df_columns
 }
 
-# ---- Identify relevant datasets based on user input ----
+# ---- Determine which datasets are needed based on user input ----
 def which_dataset(user_input, dataset_fields):
     schema_description = "\n".join([
         f"{name}: {', '.join(fields)}" for name, fields in dataset_fields.items()
@@ -75,11 +73,11 @@ Return ONLY a valid MySQL query using SQL syntax — no explanation.
     raw_response = response.choices[0].message.content.strip()
     return raw_response, datasets_list
 
-# ---- Execute SQL query via SSH to EC2-hosted MySQL ----
+# ---- Execute MySQL query via SSH tunnel ----
 def execute_mysql_query(query):
     ssh_host = 'ec2-3-144-6-200.us-east-2.compute.amazonaws.com'
     ssh_user = 'ubuntu'
-    ssh_key = 'dsci351.pem'  # Upload this file in Streamlit Cloud if deploying there
+    ssh_key = 'dsci351.pem'  # This key must be uploaded to Streamlit Files tab
 
     mysql_host = 'localhost'
     mysql_user = 'root'
@@ -103,31 +101,29 @@ def execute_mysql_query(query):
             with connection.cursor() as cursor:
                 cursor.execute(query)
 
-                # Handle SELECT queries
+                # Handle SELECT
                 if query.strip().lower().startswith("select"):
                     result = cursor.fetchall()
                     column_names = [desc[0] for desc in cursor.description]
                     return pd.DataFrame(result, columns=column_names)
                 else:
-                    # For INSERT, UPDATE, DELETE
+                    # Handle INSERT/UPDATE/DELETE
                     connection.commit()
-                    return f" Query executed successfully: `{query.split()[0].upper()}`"
+                    return f"Query executed successfully: `{query.split()[0].upper()}`"
     except Exception as e:
         return f"MySQL Execution Error: {e}"
 
-# ---- Streamlit Interface ----
-st.set_page_config(page_title="Natural Language DB Interface", layout="wide")
+# ---- Streamlit UI ----
+st.set_page_config(page_title="Natural Language DB Query", layout="wide")
 st.title("Natural Language → SQL Query Interface")
 
-st.markdown("""
-Enter a natural language query below (e.g., "Show all users born in 1999" or "Insert a new user with ID 6000").
-""")
+st.markdown("Enter a natural language query (e.g., *'Get users born in 1999'*, *'Insert new user into users_df'*)")
 
 user_input = st.text_area("Enter your natural language query:")
 
 if st.button("Generate and Run Query"):
     if not user_input.strip():
-        st.warning("Please enter a query first.")
+        st.warning("Please enter a query.")
     else:
         st.subheader("Generated SQL Query")
         query, datasets_used = create_query(user_input)
@@ -139,4 +135,3 @@ if st.button("Generate and Run Query"):
             st.dataframe(results)
         else:
             st.success(results)
-
