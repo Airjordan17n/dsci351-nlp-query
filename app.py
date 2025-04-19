@@ -1,12 +1,12 @@
 import streamlit as st
 import pandas as pd
-import openai
+from openai import OpenAI
 import pymysql
 from sshtunnel import SSHTunnelForwarder
 import os
 
-# --- Set API Key from secrets ---
-openai.api_key = st.secrets["OPENAI_API_KEY"]
+# --- Set API Key from secrets and initialize OpenAI client ---
+client = OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
 
 # --- OPTIONAL: Reconstruct PEM file from secrets (if using Streamlit secrets instead of uploaded file) ---
 # with open("dsci351.pem", "w") as f:
@@ -48,7 +48,7 @@ The user asked:
 Return ONLY the dataset names (like "cards_df", "users_df") as a comma-separated list. No explanation.
 """
 
-    response = openai.ChatCompletion.create(
+    response = client.chat.completions.create(
         model="gpt-3.5-turbo",
         messages=[{"role": "user", "content": prompt}]
     )
@@ -75,7 +75,7 @@ The user asked:
 Return ONLY a valid MySQL query using SQL syntax — no explanation.
 """
 
-    response = openai.ChatCompletion.create(
+    response = client.chat.completions.create(
         model="gpt-3.5-turbo",
         messages=[{"role": "user", "content": prompt}]
     )
@@ -85,7 +85,7 @@ Return ONLY a valid MySQL query using SQL syntax — no explanation.
 
 # --- Execute SQL query via SSH tunnel to EC2 ---
 def execute_mysql_query(query):
-    ssh_host = 'ec2-3-144-6-200.us-east-2.compute.amazonaws.com'
+    ssh_host = 'ec2-18-221-203-59.us-east-2.compute.amazonaws.com'
     ssh_user = 'ubuntu'
     ssh_key = 'dsci351.pem'  # This key must exist in root directory or be built from secrets
 
