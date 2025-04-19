@@ -101,7 +101,7 @@ Return ONLY a valid query. Use SQL syntax for tabular data (ending with '_df') a
 
 # --- Execute SQL query via SSH tunnel ---
 def execute_mysql_query(query):
-    ssh_host = 'ec2-18-221-203-59.us-east-2.compute.amazonaws.com'
+    ssh_host = 'ec2-18-221-231-28.us-east-2.compute.amazonaws.com'
     ssh_user = 'ubuntu'
     ssh_key = 'dsci351.pem'  # Should exist or be created from Streamlit secrets
 
@@ -139,7 +139,7 @@ def execute_mysql_query(query):
 
 # --- Execute MongoDB query ---
 def execute_mongo_query(query, collection_name):
-    ssh_host = 'ec2-18-221-203-59.us-east-2.compute.amazonaws.com'
+    ssh_host = 'ec2-18-221-231-28.us-east-2.compute.amazonaws.com'
     ssh_user = 'ubuntu'
     ssh_key = 'dsci351.pem'  # Make sure this is securely stored
     mongo_port = 27017
