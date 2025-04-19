@@ -9,9 +9,9 @@ import os
 client = OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
 
 # --- OPTIONAL: Reconstruct PEM file from secrets (if using Streamlit secrets instead of uploaded file) ---
-with open("dsci351.pem", "w") as f:
-     f.write(st.secrets["EC2_PEM"])
-os.chmod("dsci351.pem", 0o600)
+#with open("dsci351.pem", "w") as f:
+#     f.write(st.secrets["EC2_PEM"])
+#os.chmod("dsci351.pem", 0o600)
 
 # --- Load Datasets from /data ---
 try:
