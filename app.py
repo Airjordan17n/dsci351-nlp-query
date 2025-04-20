@@ -96,13 +96,21 @@ Here are the available datasets and the fields they contain:
 The user asked:
 \"{user_input}\"
 
-Generate a query **only** for the relevant dataset(s). Use:
-- SQL **only** if all datasets end with '_df'
-- MongoDB **only** if all datasets end with '_json'. Return ONLY a valid MongoDB query in **Python dictionary/list syntax**, suitable for execution with the PyMongo library in Python.
+Rules:
+- If **all** datasets end with `_df`, return an **SQL** query.
+- If **all** datasets end with `_json`, return a **MongoDB** query in **Python dictionary or aggregation list syntax**.
+- Do not mix SQL and MongoDB in one query.
+- If MongoDB, use correct PyMongo formats:
+    - For **find** queries, return a dictionary with `"filter"` and optionally `"projection"`.
+    - For **insertOne**, use `{{"insertOne": <document>}}`
+    - For **insertMany**, use `{{"insertMany": [<doc1>, <doc2>, ...]}}`
+    - For **updateOne**, use `{{"updateOne": {{"filter": <filter>, "update": <update>}}}}`
+    - For **updateMany**, use `{{"updateMany": {{"filter": <filter>, "update": <update>}}}}`
+    - For **deleteOne**, use `{{"deleteOne": <filter>}}`
+    - For **deleteMany**, use `{{"deleteMany": <filter>}}`
+    - For **aggregation**, return a list of pipeline stages, e.g., `[{{"$match": ...}}, ...]`
 
-Return the query in valid code form. Do **not** include labels like "SQL query:" or "MongoDB query:", or any explanation. 
-
-Only output the code of the appropriate query. No headings, no extra text.
+Return **only** the query code with no explanation or formatting.
 """
 
     response = client.chat.completions.create(
@@ -115,7 +123,7 @@ Only output the code of the appropriate query. No headings, no extra text.
 # --- Execute SQL query via SSH tunnel ---
 def execute_mysql_query(query):
     connection = pymysql.connect(
-        host="ec2-18-221-231-28.us-east-2.compute.amazonaws.com",  # public IP or hostname
+        host="ec2-18-191-80-162.us-east-2.compute.amazonaws.com",  # public IP or hostname
         user="root",
         password="Dsci351",
         database="transactions_db",
@@ -134,13 +142,12 @@ def execute_mysql_query(query):
 
 # --- Execute MongoDB query ---
 def execute_mongo_query(query, collection_name):
-    mongo_uri = "mongodb://localhost:27017"  # Update this URI if connecting to a remote MongoDB server
+    mongo_uri = "mongodb://localhost:27017"
     try:
         client = MongoClient(mongo_uri, serverSelectionTimeoutMS=5000)
         db = client["ecommerce"]
         collection = db[collection_name.replace("_json", "")]
 
-        # Safe evaluation (still potentially risky — use with caution)
         mongo_query = eval(query, {"__builtins__": None}, {})
 
         if isinstance(mongo_query, dict):
@@ -153,38 +160,42 @@ def execute_mongo_query(query, collection_name):
                 return f"Inserted IDs: {result.inserted_ids}"
 
             elif "updateOne" in mongo_query:
-                result = collection.update_one(
-                    mongo_query["updateOne"]["filter"], mongo_query["updateOne"]["update"]
-                )
+                payload = mongo_query["updateOne"]
+                result = collection.update_one(payload["filter"], payload["update"])
                 return f"Matched: {result.matched_count}, Modified: {result.modified_count}"
 
             elif "updateMany" in mongo_query:
-                result = collection.update_many(
-                    mongo_query["updateMany"]["filter"], mongo_query["updateMany"]["update"]
-                )
+                payload = mongo_query["updateMany"]
+                result = collection.update_many(payload["filter"], payload["update"])
                 return f"Matched: {result.matched_count}, Modified: {result.modified_count}"
 
             elif "deleteOne" in mongo_query:
                 result = collection.delete_one(mongo_query["deleteOne"])
                 return f"Deleted Count: {result.deleted_count}"
 
+            elif "deleteMany" in mongo_query:
+                result = collection.delete_many(mongo_query["deleteMany"])
+                return f"Deleted Count: {result.deleted_count}"
+
             elif "filter" in mongo_query:
-                result = list(collection.find(mongo_query["filter"], mongo_query.get("projection")).limit(100))
-                for doc in result:
+                projection = mongo_query.get("projection")
+                cursor = collection.find(mongo_query["filter"], projection).limit(100)
+                docs = list(cursor)
+                for doc in docs:
                     doc["_id"] = str(doc["_id"])
-                return pd.DataFrame(result)
+                return pd.DataFrame(docs)
 
             else:
-                return "Unsupported operation in MongoDB query."
+                return "Unsupported MongoDB operation."
 
-        elif isinstance(mongo_query, list):  # Assume aggregation pipeline
+        elif isinstance(mongo_query, list):
             result = list(collection.aggregate(mongo_query))
             for doc in result:
                 doc["_id"] = str(doc["_id"])
             return pd.DataFrame(result)
 
         else:
-            return "MongoDB query format not recognized."
+            return "Invalid MongoDB query format."
 
     except Exception as e:
         return f"MongoDB Execution Error: {e}"
