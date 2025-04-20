@@ -80,7 +80,6 @@ def create_query(user_input):
     columns_dict = {}
     for d in datasets_list:
         if d.endswith("_json"):
-            # force GPT to use correct collection name
             renamed_fields = [f"{d}.{col}" for col in dataset_fields_map[d]]
             columns_dict[d] = renamed_fields
         else:
@@ -130,13 +129,35 @@ If MongoDB:
     raw_response = response.choices[0].message.content.strip()
     query_str = re.sub(r"^```(?:json)?|```$", "", raw_response.strip(), flags=re.MULTILINE).strip()
 
+    # Now handle both SQL and MongoDB query types
+    is_nosql = all(d.endswith("_json") for d in datasets_list)
     try:
-        query_obj = json.loads(query_str)
-        return query_obj, datasets_list
-    except json.JSONDecodeError as e:
-        raise ValueError(f"Error parsing JSON response from OpenAI: {e}\nRaw response:\n{query_str}")
+        if is_nosql:
+            # Handle MongoDB query
+            query_obj = json.loads(query_str)
+            if isinstance(query_obj, dict):
+                # Handle queries like find, insertOne, updateOne
+                if "filter" in query_obj or "projection" in query_obj:
+                    query = {"filter": query_obj.get("filter", {}), "projection": query_obj.get("projection", None)}
+                elif "aggregate" in query_obj:
+                    query = query_obj["aggregate"]
+                else:
+                    query = query_obj
+            elif isinstance(query_obj, list):
+                query = query_obj  # This is an aggregation pipeline
+            else:
+                raise ValueError("Invalid MongoDB query format")
+        else:
+            # For SQL query, just return the raw string
+            query = query_str
 
-# --- Execute SQL query via SSH tunnel ---
+        return query, datasets_list
+    except json.JSONDecodeError as e:
+        raise ValueError(f"Error parsing MongoDB query: {e}")
+    except Exception as e:
+        raise ValueError(f"Error parsing query: {e}")
+        
+# --- Execute SQL query ---
 def execute_mysql_query(query):
     connection = pymysql.connect(
         host="ec2-18-191-80-162.us-east-2.compute.amazonaws.com",  # public IP or hostname
