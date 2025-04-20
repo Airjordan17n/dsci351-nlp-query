@@ -185,7 +185,7 @@ def execute_mysql_query(query):
 
 # --- Execute MongoDB query ---
 def execute_mongo_query(query, datasets_list):
-    mongo_uri = "mongodb://localhost:27017"
+    mongo_uri = "mongodb://ec2-18-191-80-162.us-east-2.compute.amazonaws.com:27017"
     try:
         client = MongoClient(mongo_uri, serverSelectionTimeoutMS=5000)
         db = client["ecommerce"]
