@@ -101,46 +101,23 @@ Return ONLY a valid query. Use SQL syntax for tabular data (ending with '_df') a
 
 # --- Execute SQL query via SSH tunnel ---
 def execute_mysql_query(query):
-    ssh_host = 'ec2-18-221-231-28.us-east-2.compute.amazonaws.com'
-    ssh_user = 'ubuntu'
-    ssh_key = 'dsci351.pem' # Should exist or be created from Streamlit secrets
+    connection = pymysql.connect(
+        host="ec2-18-221-231-28.us-east-2.compute.amazonaws.com",  # public IP or hostname
+        user="root",
+        password="Dsci351",
+        database="transactions_db",
+        port=3306
+    )
 
-    mysql_host = 'localhost'
-    mysql_user = 'root'
-    mysql_password = 'Dsci351'
-    mysql_db = 'transactions_db'
-
-    try:
-        with SSHTunnelForwarder(
-            (ssh_host, 22),
-            ssh_username=ssh_user,
-            ssh_pkey=ssh_key,
-            remote_bind_address=('127.0.0.1', 3306)
-        ) as tunnel:
-            print(f"Tunnel active: {tunnel.is_active}")  # Debugging line
-            if tunnel.is_active:
-                print("Tunnel successfully established.")
-                connection = pymysql.connect(
-                    host=mysql_host,
-                    user=mysql_user,
-                    password=mysql_password,
-                    database=mysql_db,
-                    port=tunnel.local_bind_port
-                )
-            else:
-                print("Tunnel is not active.")
-            with connection.cursor() as cursor:
-                cursor.execute(query)
-
-                if query.strip().lower().startswith("select"):
-                    result = cursor.fetchall()
-                    column_names = [desc[0] for desc in cursor.description]
-                    return pd.DataFrame(result, columns=column_names)
-                else:
-                    connection.commit()
-                    return f"Query executed successfully: `{query.split()[0].upper()}`"
-    except Exception as e:
-        return f"Error establishing SSH tunnel: {e}"
+    with connection.cursor() as cursor:
+        cursor.execute(query)
+        if query.strip().lower().startswith("select"):
+            result = cursor.fetchall()
+            column_names = [desc[0] for desc in cursor.description]
+            return pd.DataFrame(result, columns=column_names)
+        else:
+            connection.commit()
+            return f"Query executed successfully: `{query.split()[0].upper()}`"
 
 # --- Execute MongoDB query ---
 def execute_mongo_query(query, collection_name):
