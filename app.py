@@ -117,13 +117,18 @@ def execute_mysql_query(query):
             ssh_pkey=ssh_key,
             remote_bind_address=('127.0.0.1', 3306)
         ) as tunnel:
-            print(f"Tunnel active: {tunnel.is_active}")
-            connection = pymysql.connect(
-                host=mysql_host,
-                user=mysql_user,
-                password=mysql_password,
-                database=mysql_db,
-                port=tunnel.local_bind_port
+            print(f"Tunnel active: {tunnel.is_active}")  # Debugging line
+            if tunnel.is_active:
+                print("Tunnel successfully established.")
+                connection = pymysql.connect(
+                    host=mysql_host,
+                    user=mysql_user,
+                    password=mysql_password,
+                    database=mysql_db,
+                    port=tunnel.local_bind_port
+                )
+            else:
+                print("Tunnel is not active.")
             )
             with connection.cursor() as cursor:
                 cursor.execute(query)
