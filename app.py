@@ -6,6 +6,7 @@ from pymongo import MongoClient
 import json
 import os
 import ast
+import re
 
 # --- Set API Key from secrets and initialize OpenAI client ---
 client = OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
@@ -127,16 +128,13 @@ If MongoDB:
     )
 
     raw_response = response.choices[0].message.content.strip()
-    query_str = raw_response.strip().strip("```")
+    query_str = re.sub(r"^```(?:json)?|```$", "", raw_response.strip(), flags=re.MULTILINE).strip()
 
     try:
-        if isinstance(query_str, dict):
-            query_obj = query_str
-        else:
-            query_obj = ast.literal_eval(query_str)
+        query_obj = json.loads(query_str)
         return query_obj, datasets_list
-    except Exception as e:
-        raise ValueError(f"Error parsing query response: {e}")
+    except json.JSONDecodeError as e:
+        raise ValueError(f"Error parsing JSON response from OpenAI: {e}\nRaw response:\n{query_str}")
 
 # --- Execute SQL query via SSH tunnel ---
 def execute_mysql_query(query):
