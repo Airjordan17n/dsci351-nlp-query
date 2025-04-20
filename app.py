@@ -89,7 +89,13 @@ Here are the available datasets and the fields they contain:
 The user asked:
 \"{user_input}\"
 
-Return ONLY the raw query. Use SQL syntax for tabular data (ending with '_df') and MongoDB syntax for JSON datasets (ending with '_json'). Do NOT include any introductory text, comments, or explanation (e.g., do NOT prefix with 'SQL query:' or 'Here is your query'). Just return the pure query as valid code.
+Generate a query **only** for the relevant dataset(s). Use:
+- SQL **only** if all datasets end with '_df'
+- MongoDB **only** if all datasets end with '_json'
+
+Return the query in valid code form. Do **not** include labels like "SQL query:" or "MongoDB query:", or any explanation.
+
+Only output the code of the appropriate query. No headings, no extra text.
 """
 
     response = client.chat.completions.create(
