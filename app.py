@@ -193,52 +193,43 @@ def execute_mongo_query(query, collection_name):
 
         active_collection = collections[datasets_list[0]]
 
-        if isinstance(mongo_query, dict):
-            if "insertOne" in mongo_query:
-                result = active_collection.insert_one(mongo_query["insertOne"])
+        if isinstance(query, dict):
+            if "insertOne" in query:
+                result = active_collection.insert_one(query["insertOne"])
                 return f"Inserted ID: {result.inserted_id}"
 
-            elif "insertMany" in mongo_query:
-                result = active_collection.insert_many(mongo_query["insertMany"])
+            elif "insertMany" in query:
+                result = active_collection.insert_many(query["insertMany"])
                 return f"Inserted IDs: {result.inserted_ids}"
 
-            elif "updateOne" in mongo_query:
-                payload = mongo_query["updateOne"]
-                result = active_collection.update_one(payload["filter"], payload["update"])
+            elif "updateOne" in query:
+                result = active_collection.update_one(
+                    query["updateOne"]["filter"], query["updateOne"]["update"]
+                )
                 return f"Matched: {result.matched_count}, Modified: {result.modified_count}"
 
-            elif "updateMany" in mongo_query:
-                payload = mongo_query["updateMany"]
-                result = active_collection.update_many(payload["filter"], payload["update"])
+            elif "updateMany" in query:
+                result = active_collection.update_many(
+                    query["updateMany"]["filter"], query["updateMany"]["update"]
+                )
                 return f"Matched: {result.matched_count}, Modified: {result.modified_count}"
 
-            elif "deleteOne" in mongo_query:
-                result = active_collection.delete_one(mongo_query["deleteOne"])
+            elif "deleteOne" in query:
+                result = active_collection.delete_one(query["deleteOne"])
                 return f"Deleted Count: {result.deleted_count}"
 
-            elif "deleteMany" in mongo_query:
-                result = active_collection.delete_many(mongo_query["deleteMany"])
-                return f"Deleted Count: {result.deleted_count}"
-
-            elif "filter" in mongo_query:
-                projection = mongo_query.get("projection")
-                cursor = active_collection.find(mongo_query["filter"], projection).limit(100)
-                docs = list(cursor)
-                for doc in docs:
-                    doc["_id"] = str(doc["_id"])
-                return pd.DataFrame(docs)
+            elif "filter" in query:
+                result = list(active_collection.find(query["filter"], query.get("projection")).limit(5))
+                df = pd.DataFrame(result)
+                return df.head()
 
             else:
-                return "Unsupported MongoDB operation."
+                print("Unrecognized operation:", query)
 
-        elif isinstance(mongo_query, list):
-            result = list(collection.aggregate(mongo_query))
-            for doc in result:
-                doc["_id"] = str(doc["_id"])
-            return pd.DataFrame(result)
-
-        else:
-            return "Invalid MongoDB query format."
+        elif isinstance(query, list):  # aggregation
+            result = list(active_collection.aggregate(query))
+            df = pd.DataFrame(result)
+            return df.head()
 
     except Exception as e:
         return f"MongoDB Execution Error: {e}"
