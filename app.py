@@ -184,7 +184,7 @@ def execute_mysql_query(query):
             return f"Query executed successfully: `{query.split()[0].upper()}`"
 
 # --- Execute MongoDB query ---
-def execute_mongo_query(query, collection_name):
+def execute_mongo_query(query, datasets_list):
     mongo_uri = "mongodb://localhost:27017"
     try:
         client = MongoClient(mongo_uri, serverSelectionTimeoutMS=5000)
@@ -266,7 +266,7 @@ if st.button("Generate and Run Query"):
         elif all(d.endswith("_json") for d in datasets_used):
             # Only JSON datasets used
             collection_name = datasets_used[0]  # Choose the first JSON dataset
-            result = execute_mongo_query(query, collection_name)
+            result = execute_mongo_query(query, datasets_used)
         else:
             result = "Error: Cannot mix SQL (_df) and MongoDB (_json) datasets in a single query."
 
