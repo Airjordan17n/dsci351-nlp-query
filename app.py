@@ -101,14 +101,21 @@ Rules:
 - If **all** datasets end with `_json`, return a **MongoDB** query in **Python dictionary or aggregation list syntax**.
 - Do not mix SQL and MongoDB in one query.
 - If MongoDB, use correct PyMongo formats:
-    - For **find** queries, return a dictionary with `"filter"` and optionally `"projection"`.
-    - For **insertOne**, use `{{"insertOne": <document>}}`
-    - For **insertMany**, use `{{"insertMany": [<doc1>, <doc2>, ...]}}`
-    - For **updateOne**, use `{{"updateOne": {{"filter": <filter>, "update": <update>}}}}`
-    - For **updateMany**, use `{{"updateMany": {{"filter": <filter>, "update": <update>}}}}`
-    - For **deleteOne**, use `{{"deleteOne": <filter>}}`
-    - For **deleteMany**, use `{{"deleteMany": <filter>}}`
-    - For **aggregation**, return a list of pipeline stages, e.g., `[{{"$match": ...}}, ...]`
+    - For `.find()`:
+    {{ "filter": {{...}}, "projection": {{...}} }}
+    - For `.aggregate()`:
+        [{{"$match": {{...}}}}, ...]
+    - For `.insertOne()`:
+        {{ "insertOne": {{...}} }}
+    - For `.insertMany()`:
+        {{ "insertMany": [{{...}}, {{...}}] }}
+    - For `.updateOne()`:
+        {{ "updateOne": {{ "filter": {{...}}, "update": {{...}} }} }}
+    - For `.updateMany()`:
+        {{ "updateMany": {{ "filter": {{...}}, "update": {{...}} }} }}
+    - For `.deleteOne()`:
+        {{ "deleteOne": {{...}} }}
+        DO NOT return raw Mongo shell syntax or explanation — only the query object itself.
 
 Return **only** the query code with no explanation or formatting.
 """
@@ -118,7 +125,14 @@ Return **only** the query code with no explanation or formatting.
         messages=[{"role": "user", "content": prompt}]
     )
 
-    return response.choices[0].message.content.strip(), datasets_list
+    raw_response = response.choices[0].message.content.strip()
+    query_str = raw_response.strip().strip("```")
+
+    try:
+        query_obj = ast.literal_eval(query_str)
+        return query_obj, datasets_list
+    except Exception as e:
+        raise ValueError(f"Error parsing query response: {e}")
 
 # --- Execute SQL query via SSH tunnel ---
 def execute_mysql_query(query):
@@ -148,7 +162,7 @@ def execute_mongo_query(query, collection_name):
         db = client["ecommerce"]
         collection = db[collection_name.replace("_json", "")]
 
-        mongo_query = eval(query, {"__builtins__": None}, {})
+        mongo_query = ast.literal_eval(query)
 
         if isinstance(mongo_query, dict):
             if "insertOne" in mongo_query:
