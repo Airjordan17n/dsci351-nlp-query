@@ -77,8 +77,17 @@ def create_query(user_input):
     datasets = which_dataset(user_input, dataset_fields_map)
     datasets_list = [d.strip() for d in datasets.split(",")]
 
-    columns_dict = {d: dataset_fields_map[d] for d in datasets_list}
-    schema_description = "\n".join([f"{k}: {', '.join(v)}" for k, v in columns_dict.items()])
+    columns_dict = {}
+    for d in datasets_list:
+        if d.endswith("_json"):
+            # force GPT to use correct collection name
+            renamed_fields = [f"{d}.{col}" for col in dataset_fields_map[d]]
+            columns_dict[d] = renamed_fields
+        else:
+            columns_dict[d] = dataset_fields_map[d]
+    schema_description = "\n".join([
+    f"{name}: {', '.join([col.split('.')[-1] for col in fields])}" for name, fields in columns_dict.items()
+    ])
 
     prompt = f"""
 You are an expert query writer.
