@@ -103,7 +103,7 @@ Return ONLY a valid query. Use SQL syntax for tabular data (ending with '_df') a
 def execute_mysql_query(query):
     ssh_host = 'ec2-18-221-231-28.us-east-2.compute.amazonaws.com'
     ssh_user = 'ubuntu'
-    ssh_key = 'dsci351.pem'  # Should exist or be created from Streamlit secrets
+    ssh_key = st.secrets["ssh"]["private_key"] # Should exist or be created from Streamlit secrets
 
     mysql_host = 'localhost'
     mysql_user = 'root'
@@ -146,7 +146,7 @@ def execute_mysql_query(query):
 def execute_mongo_query(query, collection_name):
     ssh_host = 'ec2-18-221-231-28.us-east-2.compute.amazonaws.com'
     ssh_user = 'ubuntu'
-    ssh_key = 'dsci351.pem'  # Make sure this is securely stored
+    ssh_key = st.secrets["ssh"]["private_key"]  # Make sure this is securely stored
     mongo_port = 27017
 
     try:
