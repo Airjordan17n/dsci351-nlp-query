@@ -130,7 +130,10 @@ Return **only** the query code with no explanation or formatting.
     query_str = raw_response.strip().strip("```")
 
     try:
-        query_obj = ast.literal_eval(query_str)
+        if isinstance(query_str, dict):
+            query_obj = query_str
+        else:
+            query_obj = ast.literal_eval(query_str)
         return query_obj, datasets_list
     except Exception as e:
         raise ValueError(f"Error parsing query response: {e}")
