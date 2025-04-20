@@ -124,7 +124,7 @@ Format:
 DO NOT return raw Mongo shell syntax or explanation — only the query object itself.
 
 If SQL: 
-Return ONLY a valid **MySQL** query using SQL syntax — no explanation, no markdown, no comments.
+Return ONLY a valid **MySQL** query using SQL syntax — no explanation, no markdown, no comments, no need to say it is sql query.
 """
 
     response = client.chat.completions.create(
