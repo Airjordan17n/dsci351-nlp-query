@@ -129,7 +129,6 @@ def execute_mysql_query(query):
                 )
             else:
                 print("Tunnel is not active.")
-            )
             with connection.cursor() as cursor:
                 cursor.execute(query)
 
