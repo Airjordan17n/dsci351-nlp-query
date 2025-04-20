@@ -140,7 +140,7 @@ def execute_mysql_query(query):
                     connection.commit()
                     return f"Query executed successfully: `{query.split()[0].upper()}`"
     except Exception as e:
-        return f"MySQL Execution Error: {e}"
+        return f"Error establishing SSH tunnel: {e}"
 
 # --- Execute MongoDB query ---
 def execute_mongo_query(query, collection_name):
