@@ -103,22 +103,28 @@ Rules:
 - Do not mix SQL and MongoDB in one query.
 
 If MongoDB:
-- For `.find()`:
-  { "filter": { ... }, "projection": { ... } }
-- For `.aggregate()`:
-  [ { "$match": { ... } }, ... ]
-- For `.insertOne()`:
-  { "insertOne": { ... } }
-- For `.insertMany()`:
-  { "insertMany": [ { ... }, { ... } ] }
-- For `.updateOne()`:
-  { "updateOne": { "filter": { ... }, "update": { ... } } }
-- For `.updateMany()`:
-  { "updateMany": { "filter": { ... }, "update": { ... } } }
-- For `.deleteOne()`:
-  { "deleteOne": { ... } }
+Return ONLY a valid MongoDB query in **Python dictionary/list syntax**, suitable for execution with the PyMongo library in Python.
 
-**Only return the query itself as a valid JSON object. No explanations, no shell syntax, and no code formatting.**
+Format:
+- For `.find()`:
+    {{ "filter": {{...}}, "projection": {{...}} }}
+- For `.aggregate()`:
+    [{{"$match": {{...}}}}, ...]
+- For `.insertOne()`:
+    {{ "insertOne": {{...}} }}
+- For `.insertMany()`:
+    {{ "insertMany": [{{...}}, {{...}}] }}
+- For `.updateOne()`:
+    {{ "updateOne": {{ "filter": {{...}}, "update": {{...}} }} }}
+- For `.updateMany()`:
+    {{ "updateMany": {{ "filter": {{...}}, "update": {{...}} }} }}
+- For `.deleteOne()`:
+    {{ "deleteOne": {{...}} }}
+
+DO NOT return raw Mongo shell syntax or explanation — only the query object itself.
+
+If SQL: 
+Return ONLY a valid **MySQL** query using SQL syntax — no explanation, no markdown, no comments.
 """
 
     response = client.chat.completions.create(
