@@ -89,7 +89,7 @@ Here are the available datasets and the fields they contain:
 The user asked:
 \"{user_input}\"
 
-Return ONLY a valid query. Use SQL syntax for tabular data (ending with '_df') and MongoDB syntax for JSON datasets (ending with '_json'). Return the query ONLY, no other syntax or comments. No explanation.
+Return ONLY the raw query. Do NOT include any introductory text, comments, or explanation (e.g., do NOT prefix with 'SQL query:' or 'Here is your query'). Just return the pure query as valid code.
 """
 
     response = client.chat.completions.create(
