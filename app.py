@@ -99,26 +99,26 @@ The user asked:
 
 Rules:
 - If **all** datasets end with `_df`, return an **SQL** query.
-- If **all** datasets end with `_json`, return a **MongoDB** query in **Python dictionary or aggregation list syntax as a valid JSON object**.
+- If **all** datasets end with `_json`, return a **MongoDB** query in **valid JSON format**, suitable for PyMongo (double quotes required).
 - Do not mix SQL and MongoDB in one query.
-- If MongoDB, use correct PyMongo formats:
-    - For `.find()`:
-    {{ "filter": {{...}}, "projection": {{...}} }}
-    - For `.aggregate()`:
-        [{{"$match": {{...}}}}, ...]
-    - For `.insertOne()`:
-        {{ "insertOne": {{...}} }}
-    - For `.insertMany()`:
-        {{ "insertMany": [{{...}}, {{...}}] }}
-    - For `.updateOne()`:
-        {{ "updateOne": {{ "filter": {{...}}, "update": {{...}} }} }}
-    - For `.updateMany()`:
-        {{ "updateMany": {{ "filter": {{...}}, "update": {{...}} }} }}
-    - For `.deleteOne()`:
-        {{ "deleteOne": {{...}} }}
-        DO NOT return raw Mongo shell syntax or explanation — only the query object itself as a valid JSON object (use double quotes everywhere).
 
-Return **only** the query code with no explanation or formatting.
+If MongoDB:
+- For `.find()`:
+  { "filter": { ... }, "projection": { ... } }
+- For `.aggregate()`:
+  [ { "$match": { ... } }, ... ]
+- For `.insertOne()`:
+  { "insertOne": { ... } }
+- For `.insertMany()`:
+  { "insertMany": [ { ... }, { ... } ] }
+- For `.updateOne()`:
+  { "updateOne": { "filter": { ... }, "update": { ... } } }
+- For `.updateMany()`:
+  { "updateMany": { "filter": { ... }, "update": { ... } } }
+- For `.deleteOne()`:
+  { "deleteOne": { ... } }
+
+**Only return the query itself as a valid JSON object. No explanations, no shell syntax, and no code formatting.**
 """
 
     response = client.chat.completions.create(
