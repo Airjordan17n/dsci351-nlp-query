@@ -98,9 +98,9 @@ The user asked:
 
 Generate a query **only** for the relevant dataset(s). Use:
 - SQL **only** if all datasets end with '_df'
-- MongoDB **only** if all datasets end with '_json'
+- MongoDB **only** if all datasets end with '_json'. Return ONLY a valid MongoDB query in **Python dictionary/list syntax**, suitable for execution with the PyMongo library in Python.
 
-Return the query in valid code form. Do **not** include labels like "SQL query:" or "MongoDB query:", or any explanation.
+Return the query in valid code form. Do **not** include labels like "SQL query:" or "MongoDB query:", or any explanation. 
 
 Only output the code of the appropriate query. No headings, no extra text.
 """
