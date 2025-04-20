@@ -99,7 +99,7 @@ The user asked:
 
 Rules:
 - If **all** datasets end with `_df`, return an **SQL** query.
-- If **all** datasets end with `_json`, return a **MongoDB** query in **Python dictionary or aggregation list syntax**.
+- If **all** datasets end with `_json`, return a **MongoDB** query in **Python dictionary or aggregation list syntax as a valid JSON object**.
 - Do not mix SQL and MongoDB in one query.
 - If MongoDB, use correct PyMongo formats:
     - For `.find()`:
