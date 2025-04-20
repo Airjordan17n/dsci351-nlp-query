@@ -132,30 +132,30 @@ If MongoDB:
     # Now handle both SQL and MongoDB query types
     is_nosql = all(d.endswith("_json") for d in datasets_list)
     try:
-        if is_nosql:
-            # Handle MongoDB query
-            query_obj = json.loads(query_str)
-            if isinstance(query_obj, dict):
-                # Handle queries like find, insertOne, updateOne
-                if "filter" in query_obj or "projection" in query_obj:
-                    query = {"filter": query_obj.get("filter", {}), "projection": query_obj.get("projection", None)}
-                elif "aggregate" in query_obj:
+        if is_nosql: 
+            query_obj = ast.literal_eval(query_str)
+        
+            if isinstance(query_obj, list):
+                query = query_obj  # Aggregation pipeline
+            elif isinstance(query_obj, dict):
+                if "aggregate" in query_obj:  # Embedded aggregation
                     query = query_obj["aggregate"]
+                elif "filter" in query_obj or "projection" in query_obj:  # Find query
+                    filter_dict = query_obj.get("filter", {})
+                    projection_dict = query_obj.get("projection", None)
+                    query = {"filter": filter_dict, "projection": projection_dict}
                 else:
+                    # Handle insertOne, updateOne, deleteOne, etc.
                     query = query_obj
-            elif isinstance(query_obj, list):
-                query = query_obj  # This is an aggregation pipeline
             else:
-                raise ValueError("Invalid MongoDB query format")
+                raise ValueError("Query is not valid Mongo format")
         else:
             # For SQL query, just return the raw string
             query = query_str
-
-        return query, datasets_list
-    except json.JSONDecodeError as e:
-        raise ValueError(f"Error parsing MongoDB query: {e}")
     except Exception as e:
         raise ValueError(f"Error parsing query: {e}")
+    
+    return query, datasets_list
         
 # --- Execute SQL query ---
 def execute_mysql_query(query):
@@ -183,40 +183,46 @@ def execute_mongo_query(query, collection_name):
     try:
         client = MongoClient(mongo_uri, serverSelectionTimeoutMS=5000)
         db = client["ecommerce"]
-        collection = db[collection_name.replace("_json", "")]
+        #collection = db[collection_name.replace("_json", "")]
 
-        mongo_query = ast.literal_eval(query)
+        collections = {
+                "customers_json": db["customers_json"],
+                "products_json": db["products_json"],
+                "ratings_json": db["ratings_json"]
+        }
+
+        active_collection = collections[datasets_list[0]]
 
         if isinstance(mongo_query, dict):
             if "insertOne" in mongo_query:
-                result = collection.insert_one(mongo_query["insertOne"])
+                result = active_collection.insert_one(mongo_query["insertOne"])
                 return f"Inserted ID: {result.inserted_id}"
 
             elif "insertMany" in mongo_query:
-                result = collection.insert_many(mongo_query["insertMany"])
+                result = active_collection.insert_many(mongo_query["insertMany"])
                 return f"Inserted IDs: {result.inserted_ids}"
 
             elif "updateOne" in mongo_query:
                 payload = mongo_query["updateOne"]
-                result = collection.update_one(payload["filter"], payload["update"])
+                result = active_collection.update_one(payload["filter"], payload["update"])
                 return f"Matched: {result.matched_count}, Modified: {result.modified_count}"
 
             elif "updateMany" in mongo_query:
                 payload = mongo_query["updateMany"]
-                result = collection.update_many(payload["filter"], payload["update"])
+                result = active_collection.update_many(payload["filter"], payload["update"])
                 return f"Matched: {result.matched_count}, Modified: {result.modified_count}"
 
             elif "deleteOne" in mongo_query:
-                result = collection.delete_one(mongo_query["deleteOne"])
+                result = active_collection.delete_one(mongo_query["deleteOne"])
                 return f"Deleted Count: {result.deleted_count}"
 
             elif "deleteMany" in mongo_query:
-                result = collection.delete_many(mongo_query["deleteMany"])
+                result = active_collection.delete_many(mongo_query["deleteMany"])
                 return f"Deleted Count: {result.deleted_count}"
 
             elif "filter" in mongo_query:
                 projection = mongo_query.get("projection")
-                cursor = collection.find(mongo_query["filter"], projection).limit(100)
+                cursor = active_collection.find(mongo_query["filter"], projection).limit(100)
                 docs = list(cursor)
                 for doc in docs:
                     doc["_id"] = str(doc["_id"])
