@@ -120,7 +120,6 @@ def execute_mysql_query(query):
             ssh_username=ssh_user,
             ssh_pkey=ssh_key,
             remote_bind_address=('127.0.0.1', 3306)
-            print(f" 3 Using SSH key at: {ssh_key}")
         ) as tunnel:
             connection = pymysql.connect(
                 host=mysql_host,
