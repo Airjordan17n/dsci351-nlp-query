@@ -5,6 +5,7 @@ import pymysql
 from pymongo import MongoClient
 import json
 import os
+import ast
 
 # --- Set API Key from secrets and initialize OpenAI client ---
 client = OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
