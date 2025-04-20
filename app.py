@@ -105,14 +105,10 @@ def execute_mysql_query(query):
     ssh_user = 'ubuntu'
     ssh_key = 'dsci351.pem'  # Should exist or be created from Streamlit secrets
 
-    print(f" 1 Using SSH key at: {ssh_key}")
-
     mysql_host = 'localhost'
     mysql_user = 'root'
     mysql_password = 'Dsci351'
     mysql_db = 'transactions_db'
-
-    print(f" 2 Using SSH key at: {ssh_key}")
 
     try:
         with SSHTunnelForwarder(
