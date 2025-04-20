@@ -236,12 +236,15 @@ if st.button("Generate and Run Query"):
         st.code(query)
 
         st.subheader("Query Results")
-        if any(d.endswith("_json") for d in datasets_used):
-            # Assume MongoDB
-            collection_name = [d for d in datasets_used if d.endswith("_json")][0]
+        if all(d.endswith("_df") for d in datasets_used):
+            # Only SQL datasets used
+            result = execute_mysql_query(query)
+        elif all(d.endswith("_json") for d in datasets_used):
+            # Only JSON datasets used
+            collection_name = datasets_used[0]  # Choose the first JSON dataset
             result = execute_mongo_query(query, collection_name)
         else:
-            result = execute_mysql_query(query)
+            result = "Error: Cannot mix SQL (_df) and MongoDB (_json) datasets in a single query."
 
         if isinstance(result, pd.DataFrame):
             st.dataframe(result)
