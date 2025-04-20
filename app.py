@@ -121,78 +121,60 @@ def execute_mysql_query(query):
 
 # --- Execute MongoDB query ---
 def execute_mongo_query(query, collection_name):
-    ssh_host = 'ec2-18-221-231-28.us-east-2.compute.amazonaws.com'
-    ssh_user = 'ubuntu'
-    ssh_key = 'dsci351.pem'  # Make sure this is securely stored
-    mongo_port = 27017
-
+    mongo_uri = "mongodb://localhost:27017"  # Update this URI if connecting to a remote MongoDB server
     try:
-        with SSHTunnelForwarder(
-            (ssh_host, 22),
-            ssh_username=ssh_user,
-            ssh_pkey=ssh_key,
-            remote_bind_address=('127.0.0.1', mongo_port),
-            local_bind_address=('127.0.0.1', 27017)
-        ) as tunnel:
+        client = MongoClient(mongo_uri, serverSelectionTimeoutMS=5000)
+        db = client["json_db"]
+        collection = db[collection_name.replace("_json", "")]
 
-            if tunnel.is_active:
-                time.sleep(3)  # Allow tunnel to stabilize
+        # Safe evaluation (still potentially risky — use with caution)
+        mongo_query = eval(query, {"__builtins__": None}, {})
 
-                client = MongoClient('127.0.0.1', tunnel.local_bind_port, serverSelectionTimeoutMS=5000)
-                db = client["json_db"]
-                collection = db[collection_name.replace("_json", "")]
+        if isinstance(mongo_query, dict):
+            if "insertOne" in mongo_query:
+                result = collection.insert_one(mongo_query["insertOne"])
+                return f"Inserted ID: {result.inserted_id}"
 
-                # Safe evaluation (still potentially risky — use with caution)
-                mongo_query = eval(query, {"__builtins__": None}, {})
+            elif "insertMany" in mongo_query:
+                result = collection.insert_many(mongo_query["insertMany"])
+                return f"Inserted IDs: {result.inserted_ids}"
 
-                if isinstance(mongo_query, dict):
-                    if "insertOne" in mongo_query:
-                        result = collection.insert_one(mongo_query["insertOne"])
-                        return f"Inserted ID: {result.inserted_id}"
+            elif "updateOne" in mongo_query:
+                result = collection.update_one(
+                    mongo_query["updateOne"]["filter"], mongo_query["updateOne"]["update"]
+                )
+                return f"Matched: {result.matched_count}, Modified: {result.modified_count}"
 
-                    elif "insertMany" in mongo_query:
-                        result = collection.insert_many(mongo_query["insertMany"])
-                        return f"Inserted IDs: {result.inserted_ids}"
+            elif "updateMany" in mongo_query:
+                result = collection.update_many(
+                    mongo_query["updateMany"]["filter"], mongo_query["updateMany"]["update"]
+                )
+                return f"Matched: {result.matched_count}, Modified: {result.modified_count}"
 
-                    elif "updateOne" in mongo_query:
-                        result = collection.update_one(
-                            mongo_query["updateOne"]["filter"], mongo_query["updateOne"]["update"]
-                        )
-                        return f"Matched: {result.matched_count}, Modified: {result.modified_count}"
+            elif "deleteOne" in mongo_query:
+                result = collection.delete_one(mongo_query["deleteOne"])
+                return f"Deleted Count: {result.deleted_count}"
 
-                    elif "updateMany" in mongo_query:
-                        result = collection.update_many(
-                            mongo_query["updateMany"]["filter"], mongo_query["updateMany"]["update"]
-                        )
-                        return f"Matched: {result.matched_count}, Modified: {result.modified_count}"
-
-                    elif "deleteOne" in mongo_query:
-                        result = collection.delete_one(mongo_query["deleteOne"])
-                        return f"Deleted Count: {result.deleted_count}"
-
-                    elif "filter" in mongo_query:
-                        result = list(collection.find(mongo_query["filter"], mongo_query.get("projection")).limit(100))
-                        for doc in result:
-                            doc["_id"] = str(doc["_id"])
-                        return pd.DataFrame(result)
-
-                    else:
-                        return "Unsupported operation in MongoDB query."
-
-                elif isinstance(mongo_query, list):  # Assume aggregation pipeline
-                    result = list(collection.aggregate(mongo_query))
-                    for doc in result:
-                        doc["_id"] = str(doc["_id"])
-                    return pd.DataFrame(result)
-
-                else:
-                    return "MongoDB query format not recognized."
+            elif "filter" in mongo_query:
+                result = list(collection.find(mongo_query["filter"], mongo_query.get("projection")).limit(100))
+                for doc in result:
+                    doc["_id"] = str(doc["_id"])
+                return pd.DataFrame(result)
 
             else:
-                return "Failed to establish SSH tunnel."
+                return "Unsupported operation in MongoDB query."
+
+        elif isinstance(mongo_query, list):  # Assume aggregation pipeline
+            result = list(collection.aggregate(mongo_query))
+            for doc in result:
+                doc["_id"] = str(doc["_id"])
+            return pd.DataFrame(result)
+
+        else:
+            return "MongoDB query format not recognized."
 
     except Exception as e:
-        return f"MongoDB Execution Error via SSH: {e}"
+        return f"MongoDB Execution Error: {e}"
 
 # --- Streamlit App ---
 st.set_page_config(page_title="Natural Language → Query Interface", layout="wide")
