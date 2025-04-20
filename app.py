@@ -116,7 +116,7 @@ Rules:
         {{ "updateMany": {{ "filter": {{...}}, "update": {{...}} }} }}
     - For `.deleteOne()`:
         {{ "deleteOne": {{...}} }}
-        DO NOT return raw Mongo shell syntax or explanation — only the query object itself.
+        DO NOT return raw Mongo shell syntax or explanation — only the query object itself as a valid JSON object (use double quotes everywhere).
 
 Return **only** the query code with no explanation or formatting.
 """
