@@ -2,11 +2,9 @@ import streamlit as st
 import pandas as pd
 from openai import OpenAI
 import pymysql
-from sshtunnel import SSHTunnelForwarder
 from pymongo import MongoClient
 import json
 import os
-import time
 
 # --- Set API Key from secrets and initialize OpenAI client ---
 client = OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
@@ -139,7 +137,7 @@ def execute_mongo_query(query, collection_name):
     mongo_uri = "mongodb://localhost:27017"  # Update this URI if connecting to a remote MongoDB server
     try:
         client = MongoClient(mongo_uri, serverSelectionTimeoutMS=5000)
-        db = client["json_db"]
+        db = client["ecommerce"]
         collection = db[collection_name.replace("_json", "")]
 
         # Safe evaluation (still potentially risky — use with caution)
