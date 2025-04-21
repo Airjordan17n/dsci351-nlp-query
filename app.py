@@ -166,7 +166,7 @@ Return ONLY a valid **MySQL** query using SQL syntax — no explanation, no mark
         
 # --- Execute SQL query ---
 def execute_mysql_query(query):
-    ssh_host = 'ec2-18-221-203-59.us-east-2.compute.amazonaws.com'
+    ssh_host = 'ec2-3-145-112-54.us-east-2.compute.amazonaws.com'
     ssh_user = 'ubuntu'
     ssh_key = 'dsci351.pem'  # Upload this file via Colab sidebar if needed
 
