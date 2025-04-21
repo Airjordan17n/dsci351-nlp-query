@@ -3,7 +3,6 @@ import pandas as pd
 from openai import OpenAI
 import pymysql
 from pymongo import MongoClient
-from sshtunnel import SSHTunnelForwarder
 import json
 import os
 import ast
@@ -166,35 +165,13 @@ Return ONLY a valid **MySQL** query using SQL syntax — no explanation, no mark
         
 # --- Execute SQL query ---
 def execute_mysql_query(query):
-    ssh_host = 'ec2-3-145-112-54.us-east-2.compute.amazonaws.com'
-    ssh_user = 'ubuntu'
-    ssh_key = 'dsci351.pem'  # Upload this file via Colab sidebar if needed
-
-    mysql_host = 'localhost'
-    mysql_user = 'root'
-    mysql_password = 'Dsci351'
-    mysql_db = 'transactions_db'
-
-    with SSHTunnelForwarder(
-        (ssh_host, 22),
-        ssh_username=ssh_user,
-        ssh_pkey=ssh_key,
-        remote_bind_address=('127.0.0.1', 3306)
-    ) as tunnel:
-        connection = pymysql.connect(
-            host=mysql_host,
-            user=mysql_user,
-            password=mysql_password,
-            database=mysql_db,
-            port=tunnel.local_bind_port
-        )
-    #connection = pymysql.connect(
-     #   host="ec2-3-145-112-54.us-east-2.compute.amazonaws.com",  # public IP or hostname
-     #   user="root",
-    #    password="Dsci351",
-    #    database="transactions_db",
-     #   port=3306
-    #)
+    connection = pymysql.connect(
+        host="ec2-3-145-112-54.us-east-2.compute.amazonaws.com",  # public IP or hostname
+        user="root",
+        password="Dsci351",
+        database="transactions_db",
+        port=3306
+    )
 
     with connection.cursor() as cursor:
         cursor.execute(query)
