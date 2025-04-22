@@ -166,7 +166,7 @@ Return ONLY a valid **MySQL** query using SQL syntax — no explanation, no mark
 # --- Execute SQL query ---
 def execute_mysql_query(query):
     connection = pymysql.connect(
-        host="ec2-3-145-112-54.us-east-2.compute.amazonaws.com",  # public IP or hostname
+        host="ec2-18-225-255-15.us-east-2.compute.amazonaws.com",  # public IP or hostname
         user="root",
         password="Dsci351",
         database="transactions_db",
@@ -185,7 +185,7 @@ def execute_mysql_query(query):
 
 # --- Execute MongoDB query ---
 def execute_mongo_query(query, datasets_list):
-    mongo_uri = "mongodb://ec2-3-145-112-54.us-east-2.compute.amazonaws.com:27017"
+    mongo_uri = "mongodb://ec2-18-225-255-15.us-east-2.compute.amazonaws.com:27017"
     try:
         client = MongoClient(mongo_uri, serverSelectionTimeoutMS=5000)
         db = client["ecommerce"]
