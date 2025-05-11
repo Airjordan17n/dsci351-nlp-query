@@ -61,3 +61,6 @@ Second run:
 **Known Issues**
 - SSH tunneling with Streamlit may require a manual workaround (see above).
 - Model outputs can sometimes require post-processing. If the site errors, try refreshing and resubmitting.
+
+**Streamlit:**
+https://dsci351-nlp-query-kwakn24eavckkbgcszraho.streamlit.app/
